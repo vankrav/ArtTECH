@@ -52,6 +52,7 @@
 *.tox
 *.toe.bak
 *.tox.bak
+touchdesigner/tox/MediaPipe/
 
 # macOS
 .DS_Store
