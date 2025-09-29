@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face CV Game</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Face CV Game</h1>
+        <p>Move your face to guide the blue ball and collect yellow stars! Allow camera access.</p>
+        <div class="game-area">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div class="viz-area">
+                <h3>Face Tracking View</h3>
+                <video id="video" autoplay playsinline></video>
+                <canvas id="faceCanvas"></canvas>
+            </div>
+        </div>
+        <div id="score">Score: 0</div>
+        <button id="resetBtn">Reset Game</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

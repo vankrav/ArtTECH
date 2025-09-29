@@ -1,0 +1,68 @@
+{
+    "shapeDef": {
+        "0": {
+            "layer": 0.0,
+            "parameters": {
+                "Anisotropic": "off",
+                "Bias": 0.0,
+                "Colora": 1.0,
+                "Colorb": 0.4708373580497387,
+                "Colorg": 0.25,
+                "Colorr": 0.5,
+                "Cols": 3,
+                "Custompivotuvx": 27.002,
+                "Custompivotuvy": 1.002,
+                "Custompivotuvz": 0.0,
+                "Custompivotx": -202.0,
+                "Custompivoty": 17.5,
+                "Custompivotz": 0.0,
+                "Enablesoftedge": false,
+                "Extendu": "zero",
+                "Extendv": "zero",
+                "Filter": "mipmaplinear",
+                "Fliptexture": false,
+                "Handlelock": true,
+                "Linearize": 0.0,
+                "Mapping": "perspective",
+                "Name": "Rectangle0",
+                "Pivot": "4",
+                "Pivotuv": "4",
+                "Rolloff": "halfCos",
+                "Rows": 3,
+                "Showtexture": true,
+                "Softedge": 0.6,
+                "Softedgetype": "uniform",
+                "Steepness": 1.0,
+                "Texture": "/project1/noise1",
+                "Textureid": 1,
+                "Textureorientation": "0",
+                "Type": "Rectangle",
+                "Uvmatrix": "tdu.Matrix()",
+                "Warp": "bezier"
+            },
+            "path": "/project1/kantanMapper/project/allShapes/item0",
+            "shapeDef": {
+                "homography": "0.9624920977076319\t-0.10063411757595418\t-0.08291456103324883\r\n-0.2757463150652089\t0.8393291862510438\t-0.11095887422561625\r\n-0.3419701766376829\t-0.07528642769016346\t1.0\r\n",
+                "keyOffset": "id\tu\tv\r\n0\t0.4170854389667511\t0.38904112577438354\r\n1\t0.8366833925247192\t-0.08767123520374298\r\n2\t0.3015075291041285\t0.287671254016459\r\n3\t0.836683377623558\t0.2767123430967331\r\n",
+                "pointOffset": "index\tP_0_\tP_1_\tP_2_\r\n",
+                "softedgeHomography": "1\t0\t0\r\n0\t1\t0\r\n0\t0\t1.0\r\n",
+                "softedgePoints": "index\tP(0)\tP(1)\r\n0\t0\t0\r\n1\t1.0\t0.0\r\n2\t0.0\t1\r\n3\t1\t1\r\n",
+                "uvOffset": "\r\n",
+                "uvOffsetTexture": "index\tu\tv\r\n0\t0\t0\r\n1\t0\t0\r\n2\t0\t0\r\n3\t0\t0\r\n"
+            },
+            "shapeXform": "tdu.Matrix([398.0, 0.0, 0.0, 0.0, 0.0, 365.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -202.0, 17.5, 0.0, 1.0])",
+            "type": "1"
+        }
+    },
+    "shapes": [
+        {
+            "sId": "0",
+            "sLayer": "0",
+            "sLock": "0",
+            "sOwner": "-1",
+            "sPath": "/project1/kantanMapper/project/allShapes/item0",
+            "sType": "1",
+            "sVisible": "1"
+        }
+    ]
+}

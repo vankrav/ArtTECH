@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сад Камней</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f4e4bc 0%, #e6d3a3 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #gardenCanvas {
+            display: block;
+            cursor: crosshair;
+            background: 
+                radial-gradient(circle at 20% 20%, #f5f0e8 1px, transparent 1px),
+                radial-gradient(circle at 80% 80%, #f5f0e8 1px, transparent 1px),
+                linear-gradient(45deg, #f8f5e8 25%, transparent 25%),
+                linear-gradient(-45deg, #f8f5e8 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f8f5e8 75%),
+                linear-gradient(-45deg, transparent 75%, #f8f5e8 75%);
+            background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px, 20px 20px, 20px 20px;
+            background-position: 0 0, 0 0, 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gardenCanvas"></canvas>
+
+    <script>
+        class RockGardenEditor {
+            constructor() {
+                this.canvas = document.getElementById('gardenCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.stones = [];
+                this.selectedStone = null;
+                this.isDragging = false;
+                this.dragOffset = { x: 0, y: 0 };
+                this.stoneSize = 40;
+                this.sandBackground = null; // Кэш для песочного фона
+
+                this.setupCanvas();
+                this.initializeEventListeners();
+                this.loadStoneTextures();
+                this.loadTextureImages();
+                this.drawGarden();
+            }
+
+            setupCanvas() {
+                // Устанавливаем размер canvas на весь экран
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+
+                // Обработчик изменения размера окна
+                window.addEventListener('resize', () => {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                    this.sandBackground = null; // Сбрасываем кэш при изменении размера
+                    this.drawGarden();
+                });
+            }
+
+            loadStoneTextures() {
+                // Текстуры для разных типов камней
+                this.stoneTextures = {
+                    'smooth': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ],
+                    'granite': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ],
+                    'marble': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ],
+                    'rough': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ],
+                    'sandstone': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ],
+                    'crystal': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ],
+                    'metallic': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ],
+                    'mossy': [
+                        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1544457582-d4e9e3f3d1a6?w=200&h=200&fit=crop&crop=center',
+                        'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=200&h=200&fit=crop&crop=center'
+                    ]
+                };
+            }
+
+            loadTextureImages() {
+                this.textureImages = {};
+
+                // Загружаем изображения текстур
+                Object.keys(this.stoneTextures).forEach(textureType => {
+                    this.textureImages[textureType] = [];
+
+                    this.stoneTextures[textureType].forEach((url, index) => {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = () => {
+                            this.textureImages[textureType][index] = img;
+                            console.log(`Загружена текстура ${textureType} ${index + 1}`);
+                        };
+                        img.onerror = () => {
+                            console.warn(`Не удалось загрузить текстуру: ${url}`);
+                        };
+                        img.src = url;
+                    });
+                });
+            }
+
+            initializeEventListeners() {
+                // События мыши на canvas
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+                this.canvas.addEventListener('click', (e) => this.handleClick(e));
+                this.canvas.addEventListener('contextmenu', (e) => this.handleRightClick(e));
+
+                // Обработка клавиш
+                document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+            }
+
+            handleKeyDown(e) {
+                if (e.key === 'c' || e.key === 'C') {
+                    // Очистить сад по нажатию C
+                    this.stones = [];
+                    this.drawGarden();
+                } else if (e.key === 's' || e.key === 'S') {
+                    // Сохранить по нажатию S
+                    this.saveGarden();
+                } else if (e.key === 'l' || e.key === 'L') {
+                    // Загрузить по нажатию L
+                    this.loadGarden();
+                } else if (e.key === '+' || e.key === '=') {
+                    // Увеличить размер камня
+                    this.stoneSize = Math.min(100, this.stoneSize + 5);
+                } else if (e.key === '-') {
+                    // Уменьшить размер камня
+                    this.stoneSize = Math.max(10, this.stoneSize - 5);
+                }
+            }
+
+            handleMouseDown(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const stone = this.getStoneAt(x, y);
+                if (stone) {
+                    this.selectedStone = stone;
+                    this.isDragging = true;
+                    this.dragOffset = {
+                        x: x - stone.x,
+                        y: y - stone.y
+                    };
+                    this.canvas.style.cursor = 'grabbing';
+                }
+            }
+
+            handleMouseMove(e) {
+                if (this.isDragging && this.selectedStone) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    this.selectedStone.x = x - this.dragOffset.x;
+                    this.selectedStone.y = y - this.dragOffset.y;
+
+                    // Ограничиваем перемещение в пределах canvas
+                    this.selectedStone.x = Math.max(this.selectedStone.size/2, 
+                        Math.min(this.canvas.width - this.selectedStone.size/2, this.selectedStone.x));
+                    this.selectedStone.y = Math.max(this.selectedStone.size/2, 
+                        Math.min(this.canvas.height - this.selectedStone.size/2, this.selectedStone.y));
+
+                    this.drawGarden();
+                } else {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    if (this.getStoneAt(x, y)) {
+                        this.canvas.style.cursor = 'grab';
+                    } else {
+                        this.canvas.style.cursor = 'crosshair';
+                    }
+                }
+            }
+
+            handleMouseUp(e) {
+                this.isDragging = false;
+                this.selectedStone = null;
+                this.canvas.style.cursor = 'crosshair';
+            }
+
+            handleClick(e) {
+                if (!this.isDragging) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // Проверяем, не кликнули ли на существующий камень
+                    if (!this.getStoneAt(x, y)) {
+                        this.addStone(x, y);
+                    }
+                }
+            }
+
+            handleRightClick(e) {
+                e.preventDefault(); // Отключаем контекстное меню браузера
+
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Находим камень под курсором
+                const stoneToRemove = this.getStoneAt(x, y);
+                if (stoneToRemove) {
+                    // Удаляем камень
+                    this.stones = this.stones.filter(stone => stone.id !== stoneToRemove.id);
+                    this.drawGarden();
+                    console.log('🗑️ Камень удален');
+                }
+            }
+
+            getStoneAt(x, y) {
+                return this.stones.find(stone => {
+                    // Упрощенная проверка столкновения для всех форм
+                    const distance = Math.sqrt((x - stone.x) ** 2 + (y - stone.y) ** 2);
+                    return distance <= stone.size / 2;
+                });
+            }
+
+            addStone(x, y) {
+                const stone = {
+                    x: x,
+                    y: y,
+                    size: this.stoneSize,
+                    color: this.getRandomStoneColor(),
+                    shape: this.getRandomStoneShape(),
+                    texture: this.getRandomStoneTexture(),
+                    rotation: Math.random() * Math.PI * 2, // Случайный поворот
+                    id: Date.now() + Math.random()
+                };
+                
+                this.stones.push(stone);
+                this.drawGarden();
+                this.updateStoneCount();
+            }
+
+            getRandomStoneColor() {
+                const colors = [
+                    // Классические каменные цвета
+                    '#8B7355', '#A0522D', '#696969', '#2F4F4F',
+                    '#8B4513', '#654321', '#708090', '#556B2F',
+                    '#8B7D6B', '#A9A9A9', '#2E8B57', '#8B008B',
+                    
+                    // Дополнительные природные цвета
+                    '#CD853F', '#DEB887', '#F4A460', '#D2B48C',
+                    '#BC8F8F', '#A0522D', '#8B4513', '#654321',
+                    '#2F4F4F', '#708090', '#696969', '#778899',
+                    '#B0C4DE', '#D3D3D3', '#C0C0C0', '#A9A9A9',
+                    
+                    // Цвета минералов
+                    '#9370DB', '#8A2BE2', '#4B0082', '#800080',
+                    '#8B008B', '#DC143C', '#B22222', '#8B0000',
+                    '#FF6347', '#FF4500', '#FF8C00', '#FFD700',
+                    '#ADFF2F', '#32CD32', '#228B22', '#006400',
+                    '#00CED1', '#20B2AA', '#008B8B', '#4682B4',
+                    '#5F9EA0', '#87CEEB', '#87CEFA', '#B0E0E6'
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            getRandomStoneShape() {
+                const shapes = ['circle', 'oval', 'triangle', 'square', 'diamond', 'irregular'];
+                return shapes[Math.floor(Math.random() * shapes.length)];
+            }
+
+            getRandomStoneTexture() {
+                const textures = ['smooth', 'rough', 'granite', 'marble', 'sandstone', 'crystal', 'metallic', 'mossy'];
+                const textureType = textures[Math.floor(Math.random() * textures.length)];
+                const textureUrls = this.stoneTextures[textureType];
+                return {
+                    type: textureType,
+                    url: textureUrls[Math.floor(Math.random() * textureUrls.length)]
+                };
+            }
+
+            drawGarden() {
+                // Очищаем canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Рисуем песочный фон (только если он не закэширован)
+                if (!this.sandBackground) {
+                    this.drawSandBackground();
+                    this.createSandBackgroundCache();
+                } else {
+                    this.ctx.drawImage(this.sandBackground, 0, 0);
+                }
+
+                // Рисуем камни
+                this.stones.forEach(stone => {
+                    this.drawStone(stone);
+                });
+            }
+
+            createSandBackgroundCache() {
+                // Создаем кэш песочного фона
+                this.sandBackground = document.createElement('canvas');
+                this.sandBackground.width = this.canvas.width;
+                this.sandBackground.height = this.canvas.height;
+                const bgCtx = this.sandBackground.getContext('2d');
+
+                // Рисуем песочный фон на кэшированном canvas
+                this.drawSandBackgroundOnCanvas(bgCtx, this.sandBackground.width, this.sandBackground.height);
+            }
+
+            drawSandBackgroundOnCanvas(ctx, width, height) {
+                // Создаем градиент для песочного фона
+                const gradient = ctx.createRadialGradient(
+                    width/2, height/2, 0,
+                    width/2, height/2, width/2
+                );
+                gradient.addColorStop(0, '#f8f5e8');
+                gradient.addColorStop(1, '#f0e6d2');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                // Добавляем текстуру песка
+                ctx.fillStyle = 'rgba(139, 115, 85, 0.1)';
+                for (let i = 0; i < 200; i++) {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height;
+                    const size = Math.random() * 3 + 1;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            drawSandBackground() {
+                // Этот метод больше не используется для основного рисования
+                // Но оставляем для совместимости
+                this.drawSandBackgroundOnCanvas(this.ctx, this.canvas.width, this.canvas.height);
+            }
+
+
+            drawStone(stone) {
+                const { x, y, size, color, shape, texture, rotation } = stone;
+                
+                this.ctx.save();
+                this.ctx.translate(x, y);
+                this.ctx.rotate(rotation);
+                
+                // Тень камня
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                this.drawStoneShape(shape, size, 2, 2);
+                
+                // Основной камень с текстурой
+                this.drawStoneWithTexture(shape, size, color, texture);
+                
+                // Выделение на камне
+                const highlightGradient = this.ctx.createRadialGradient(
+                    -size/4, -size/4, 0,
+                    -size/4, -size/4, size/3
+                );
+                highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+                highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                
+                this.ctx.fillStyle = highlightGradient;
+                this.drawStoneShape(shape, size, 0, 0);
+                
+                // Контур камня
+                this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+                this.drawStoneShape(shape, size, 0, 0, true);
+                
+                this.ctx.restore();
+            }
+
+            drawStoneWithTexture(shape, size, color, texture) {
+                const halfSize = size / 2;
+
+                // Создаем градиент в зависимости от текстуры
+                let gradient;
+
+                switch (texture.type) {
+                    case 'smooth':
+                        gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.3));
+                        gradient.addColorStop(1, this.darkenColor(color, 0.2));
+                        break;
+                        
+                    case 'rough':
+                        gradient = this.ctx.createLinearGradient(-halfSize, -halfSize, halfSize, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.2));
+                        gradient.addColorStop(0.5, color);
+                        gradient.addColorStop(1, this.darkenColor(color, 0.3));
+                        break;
+                        
+                    case 'granite':
+                        gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.4));
+                        gradient.addColorStop(0.3, color);
+                        gradient.addColorStop(0.7, this.darkenColor(color, 0.1));
+                        gradient.addColorStop(1, this.darkenColor(color, 0.3));
+                        break;
+                        
+                    case 'marble':
+                        gradient = this.ctx.createLinearGradient(-halfSize, -halfSize, halfSize, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.5));
+                        gradient.addColorStop(0.3, color);
+                        gradient.addColorStop(0.6, this.lightenColor(color, 0.2));
+                        gradient.addColorStop(1, this.darkenColor(color, 0.2));
+                        break;
+                        
+                    case 'sandstone':
+                        gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.3));
+                        gradient.addColorStop(0.5, color);
+                        gradient.addColorStop(1, this.darkenColor(color, 0.4));
+                        break;
+                        
+                    case 'crystal':
+                        gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.6));
+                        gradient.addColorStop(0.3, this.lightenColor(color, 0.3));
+                        gradient.addColorStop(0.7, color);
+                        gradient.addColorStop(1, this.darkenColor(color, 0.2));
+                        break;
+                        
+                    case 'metallic':
+                        gradient = this.ctx.createLinearGradient(-halfSize, -halfSize, halfSize, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.7));
+                        gradient.addColorStop(0.2, this.lightenColor(color, 0.4));
+                        gradient.addColorStop(0.5, color);
+                        gradient.addColorStop(0.8, this.darkenColor(color, 0.2));
+                        gradient.addColorStop(1, this.darkenColor(color, 0.4));
+                        break;
+                        
+                    case 'mossy':
+                        gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.2));
+                        gradient.addColorStop(0.6, color);
+                        gradient.addColorStop(1, this.darkenColor(color, 0.5));
+                        break;
+                        
+                    default:
+                        gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, halfSize);
+                        gradient.addColorStop(0, this.lightenColor(color, 0.3));
+                        gradient.addColorStop(1, this.darkenColor(color, 0.2));
+                }
+                
+                this.ctx.fillStyle = gradient;
+                this.drawStoneShape(shape, size, 0, 0);
+                
+                // Добавляем текстуру поверх градиента
+                this.addTexturePattern(shape, size, texture.type, color);
+            }
+
+            addTexturePattern(shape, size, textureType, baseColor) {
+                const halfSize = size / 2;
+                const patternSize = Math.max(4, size / 8);
+
+                this.ctx.save();
+
+                // Создаем маску для текстуры
+                this.ctx.globalCompositeOperation = 'source-atop';
+
+                switch (textureType) {
+                    case 'rough':
+                        this.drawRoughTexture(shape, size, baseColor);
+                        break;
+                    case 'granite':
+                        this.drawGraniteTexture(shape, size, baseColor);
+                        break;
+                    case 'marble':
+                        this.drawMarbleTexture(shape, size, baseColor);
+                        break;
+                    case 'sandstone':
+                        this.drawSandstoneTexture(shape, size, baseColor);
+                        break;
+                    case 'crystal':
+                        this.drawCrystalTexture(shape, size, baseColor);
+                        break;
+                    case 'metallic':
+                        this.drawMetallicTexture(shape, size, baseColor);
+                        break;
+                    case 'mossy':
+                        this.drawMossyTexture(shape, size, baseColor);
+                        break;
+                }
+
+                this.ctx.restore();
+            }
+
+            drawRoughTexture(shape, size, baseColor) {
+                const halfSize = size / 2;
+                for (let i = 0; i < 20; i++) {
+                    const x = (Math.random() - 0.5) * size;
+                    const y = (Math.random() - 0.5) * size;
+                    const radius = Math.random() * 3 + 1;
+                    
+                    this.ctx.fillStyle = this.darkenColor(baseColor, Math.random() * 0.3);
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            drawGraniteTexture(shape, size, baseColor) {
+                const halfSize = size / 2;
+                for (let i = 0; i < 15; i++) {
+                    const x = (Math.random() - 0.5) * size;
+                    const y = (Math.random() - 0.5) * size;
+                    const width = Math.random() * 4 + 2;
+                    const height = Math.random() * 4 + 2;
+                    
+                    this.ctx.fillStyle = this.lightenColor(baseColor, Math.random() * 0.4);
+                    this.ctx.fillRect(x - width/2, y - height/2, width, height);
+                }
+            }
+
+            drawMarbleTexture(shape, size, baseColor) {
+                const halfSize = size / 2;
+                for (let i = 0; i < 8; i++) {
+                    const startX = (Math.random() - 0.5) * size;
+                    const startY = (Math.random() - 0.5) * size;
+                    const endX = (Math.random() - 0.5) * size;
+                    const endY = (Math.random() - 0.5) * size;
+                    
+                    this.ctx.strokeStyle = this.lightenColor(baseColor, Math.random() * 0.6);
+                    this.ctx.lineWidth = Math.random() * 2 + 1;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.lineTo(endX, endY);
+                    this.ctx.stroke();
+                }
+            }
+
+            drawSandstoneTexture(shape, size, baseColor) {
+                const halfSize = size / 2;
+                for (let i = 0; i < 25; i++) {
+                    const x = (Math.random() - 0.5) * size;
+                    const y = (Math.random() - 0.5) * size;
+                    const radius = Math.random() * 2 + 0.5;
+                    
+                    this.ctx.fillStyle = this.darkenColor(baseColor, Math.random() * 0.2);
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            drawCrystalTexture(shape, size, baseColor) {
+                const halfSize = size / 2;
+                for (let i = 0; i < 12; i++) {
+                    const x = (Math.random() - 0.5) * size;
+                    const y = (Math.random() - 0.5) * size;
+                    const side = Math.random() * 3 + 2;
+                    
+                    this.ctx.fillStyle = this.lightenColor(baseColor, Math.random() * 0.8);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, y - side);
+                    this.ctx.lineTo(x + side * 0.866, y + side * 0.5);
+                    this.ctx.lineTo(x - side * 0.866, y + side * 0.5);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                }
+            }
+
+            drawMetallicTexture(shape, size, baseColor) {
+                const halfSize = size / 2;
+                for (let i = 0; i < 6; i++) {
+                    const x = (Math.random() - 0.5) * size;
+                    const y = (Math.random() - 0.5) * size;
+                    const width = Math.random() * 8 + 4;
+                    const height = Math.random() * 2 + 1;
+                    
+                    this.ctx.fillStyle = this.lightenColor(baseColor, Math.random() * 0.9);
+                    this.ctx.fillRect(x - width/2, y - height/2, width, height);
+                }
+            }
+
+            drawMossyTexture(shape, size, baseColor) {
+                const halfSize = size / 2;
+                for (let i = 0; i < 18; i++) {
+                    const x = (Math.random() - 0.5) * size;
+                    const y = (Math.random() - 0.5) * size;
+                    const radius = Math.random() * 2 + 1;
+                    
+                    this.ctx.fillStyle = this.darkenColor(baseColor, Math.random() * 0.4);
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            lightenColor(color, amount) {
+                const num = parseInt(color.replace("#", ""), 16);
+                const r = Math.min(255, ((num >> 16) & 255) + Math.floor(255 * amount));
+                const g = Math.min(255, ((num >> 8) & 255) + Math.floor(255 * amount));
+                const b = Math.min(255, (num & 255) + Math.floor(255 * amount));
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+
+            darkenColor(color, amount) {
+                const num = parseInt(color.replace("#", ""), 16);
+                const r = Math.max(0, ((num >> 16) & 255) - Math.floor(255 * amount));
+                const g = Math.max(0, ((num >> 8) & 255) - Math.floor(255 * amount));
+                const b = Math.max(0, (num & 255) - Math.floor(255 * amount));
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+
+            drawStoneShape(shape, size, offsetX = 0, offsetY = 0, strokeOnly = false) {
+                const halfSize = size / 2;
+                const quarterSize = size / 4;
+                
+                this.ctx.beginPath();
+                
+                switch (shape) {
+                    case 'circle':
+                        this.ctx.ellipse(offsetX, offsetY, halfSize, halfSize, 0, 0, Math.PI * 2);
+                        break;
+                        
+                    case 'oval':
+                        this.ctx.ellipse(offsetX, offsetY, halfSize, halfSize * 0.7, 0, 0, Math.PI * 2);
+                        break;
+                        
+                    case 'triangle':
+                        this.ctx.moveTo(offsetX, offsetY - halfSize);
+                        this.ctx.lineTo(offsetX - halfSize * 0.866, offsetY + halfSize * 0.5);
+                        this.ctx.lineTo(offsetX + halfSize * 0.866, offsetY + halfSize * 0.5);
+                        this.ctx.closePath();
+                        break;
+                        
+                    case 'square':
+                        this.ctx.rect(offsetX - halfSize, offsetY - halfSize, size, size);
+                        break;
+                        
+                    case 'diamond':
+                        this.ctx.moveTo(offsetX, offsetY - halfSize);
+                        this.ctx.lineTo(offsetX + halfSize, offsetY);
+                        this.ctx.lineTo(offsetX, offsetY + halfSize);
+                        this.ctx.lineTo(offsetX - halfSize, offsetY);
+                        this.ctx.closePath();
+                        break;
+                        
+                    case 'irregular':
+                        // Создаем неправильную форму с неровными краями
+                        const points = 8;
+                        const angleStep = (Math.PI * 2) / points;
+                        this.ctx.moveTo(offsetX + halfSize, offsetY);
+                        
+                        for (let i = 1; i <= points; i++) {
+                            const angle = i * angleStep;
+                            const radius = halfSize * (0.7 + Math.random() * 0.6);
+                            const x = offsetX + Math.cos(angle) * radius;
+                            const y = offsetY + Math.sin(angle) * radius;
+                            this.ctx.lineTo(x, y);
+                        }
+                        this.ctx.closePath();
+                        break;
+                        
+                    default:
+                        this.ctx.ellipse(offsetX, offsetY, halfSize, halfSize, 0, 0, Math.PI * 2);
+                }
+                
+                if (!strokeOnly) {
+                    this.ctx.fill();
+                }
+                this.ctx.stroke();
+            }
+
+            updateStoneCount() {
+                // Убрали счетчик камней для чистого интерфейса
+            }
+
+            saveGarden() {
+                const gardenData = {
+                    stones: this.stones,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const dataStr = JSON.stringify(gardenData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `rock_garden_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+            }
+
+            loadGarden() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                const gardenData = JSON.parse(e.target.result);
+                                this.stones = gardenData.stones || [];
+                                this.drawGarden();
+                                this.updateStoneCount();
+                                alert('Сад камней успешно загружен!');
+                            } catch (error) {
+                                alert('Ошибка при загрузке файла: ' + error.message);
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                };
+                
+                input.click();
+            }
+        }
+
+        // Инициализируем редактор при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            new RockGardenEditor();
+        });
+
+        // Показываем подсказки по управлению
+        console.log('🏔️ Сад Камней - Управление:');
+        console.log('• Левый клик - добавить камень (случайная форма, цвет и текстура)');
+        console.log('• Правый клик - удалить камень под курсором');
+        console.log('• Перетаскивание - переместить камень');
+        console.log('• C - очистить сад');
+        console.log('• S - сохранить сад');
+        console.log('• L - загрузить сад');
+        console.log('• +/- - изменить размер камня');
+        console.log('• Формы: круг, овал, треугольник, квадрат, ромб, неправильная');
+        console.log('• Текстуры: гладкая, шероховатая, гранит, мрамор, песчаник, кристалл, металлическая, мшистая');
+        console.log('• Цвета: 40+ природных оттенков и минеральных цветов');
+        console.log('• ⚡ Оптимизация: песочный фон кэшируется для лучшей производительности');
+        console.log('• 🌐 Текстуры загружаются из интернета для реалистичного вида');
+    </script>
+</body>
+</html>
+
